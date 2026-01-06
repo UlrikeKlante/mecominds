@@ -43,8 +43,14 @@ wait_for_kafka() {
     local timeout=${3:-600}
     
     echo "Waiting for Kafka cluster $kafka_name to be ready..."
-    kubectl wait --for=condition=Ready --timeout=${timeout}s \
-        kafka/$kafka_name -n $namespace || true
+    if kubectl wait --for=condition=Ready --timeout=${timeout}s \
+        kafka/$kafka_name -n $namespace 2>/dev/null; then
+        echo "Kafka cluster is ready!"
+    else
+        echo "Warning: Kafka cluster may still be initializing."
+        echo "Check status with: kubectl get kafka $kafka_name -n $namespace"
+        echo "Check logs with: kubectl logs -n $namespace deployment/strimzi-cluster-operator"
+    fi
 }
 
 echo "Step 1: Deploying Strimzi Operator v0.49.0"
